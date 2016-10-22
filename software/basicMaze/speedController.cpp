@@ -346,7 +346,7 @@ void resetSpeedProfile(void)
    kpX = 0.95; kdX = 10;
    kpW = 0.8; kdW = 17;//used in straight
    kpW0 = kpW; kdW0 = kdW;//used in straight
-   kpWir = 0.85; kdWir = 7;//used with IR errors
+   kpWir = 1.05; kdWir = 9;//used with IR errors
 
    accX = 45;//6m/s/s
    decX = 90;

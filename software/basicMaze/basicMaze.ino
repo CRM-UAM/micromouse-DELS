@@ -235,7 +235,7 @@ int leerPared(){
 
     if(IR_value[0]<70){
       return 1;
-    }else if(IR_value[1]<35){
+    }else if(IR_value[1]<37){
       return 0;
     }else if(IR_value[2]<70){
       return -1;
@@ -246,10 +246,13 @@ int leerPared(){
 void loop(){
   
    targetSpeedW = 0;
-   targetSpeedX = maxSpeed;
+   targetSpeedX = 0;//maxSpeed;
    kpW = kpW0;
    kdW = kdW0;
    ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
+   while(1){
+    delay(1000);
+   }
   int pared=leerPared();
   if( pared!=0){
     targetSpeedX = speed_to_counts(0);
