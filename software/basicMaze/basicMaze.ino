@@ -182,7 +182,7 @@ void setup() {
   //init_telnet();
 
   robot.begin();
-
+  resetSpeedProfile();
    os_timer_setfn(&timerSpeedController, speedProfile, NULL);
    os_timer_arm(&timerSpeedController, 25, true);
   // resetSpeedProfile();
@@ -244,6 +244,7 @@ int leerPared(){
 }
 
 void loop(){
+  
    targetSpeedW = 0;
    targetSpeedX = maxSpeed;
    kpW = kpW0;
