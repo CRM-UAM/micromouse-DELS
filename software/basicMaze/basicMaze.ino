@@ -17,7 +17,7 @@ extern "C" {
 }
 
 
-#define ir_weight_straight  0.5
+#define ir_weight_straight  1
 
 
 /**

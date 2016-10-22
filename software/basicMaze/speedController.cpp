@@ -175,6 +175,8 @@ void calculateMotorPwm(void) // encoder PD controller
 
 
     getErrIRChino();
+    Serial.print(posErrorWir);
+
     /*if(posErrorWir < 20){
       posErrorW = 0;
     }*/
@@ -183,6 +185,9 @@ void calculateMotorPwm(void) // encoder PD controller
     posPwmW = kpW * posErrorW + kdW * (posErrorW - oldPosErrorW);
     posPwmWir = kpWir * posErrorWir + kdWir * (posErrorWir - oldPosErrorWir); 
 
+    Serial.print("-");
+    Serial.print(posPwmWir);
+
     oldPosErrorX = posErrorX;
     oldPosErrorW = posErrorW;
     oldPosErrorWir = posErrorWir;
@@ -190,6 +195,9 @@ void calculateMotorPwm(void) // encoder PD controller
     leftBaseSpeed = posPwmX - ( (1-ir_weight)*posPwmW + ir_weight*posPwmWir);
     rightBaseSpeed = posPwmX + ( (1-ir_weight)*posPwmW + ir_weight*posPwmWir);
 
+
+    Serial.print("-");
+    Serial.println((rightBaseSpeed-leftBaseSpeed)/2);
     robot.setMotorLeftSpeed(leftBaseSpeed);
     robot.setMotorRightSpeed(rightBaseSpeed);
     /*if(p_telemetria<SIZE_TELEMETRIA){
@@ -209,12 +217,41 @@ void calculateMotorPwm(void) // encoder PD controller
 void leerIRs(uint8_t *data){
   uint8_t IR_value1[3]={0};
   uint8_t IR_value2[3]={0};
-  robot.analogScand(3, IR_value1);  
+  robot.analogScand(3, IR_value1); 
+  robot.digitalWrite(0,HIGH);
+  robot.analogScand(3, IR_value2);
+  robot.digitalWrite(0,LOW);
+  for(int i=0;i<3;i++)
+    data[i] = (IR_value2[i] - IR_value1[i]);
+  
+}
+
+float mapf(long x, long in_min, long in_max, long out_min, long out_max)
+{
+ return (float)(x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
+}
+
+void leerDist(double *res){
+  
+  uint8_t IR_value1[3]={0};
+  uint8_t IR_value2[3]={0};
+  uint8_t cal[3][21]={{236,226,184,120,83,64,49,39,32,27,23  ,20,17,15,14,13,12,11,10,8,7},
+                      {245,237,231,198,121,85,62,48,38,31,25, 21,18,15,13,12,11,10,9,8,7},
+                      {236,233,218,177,129,99,77,61,50,42,35,30,26,23,20,18, 15, 14, 13,12,11}};
+  
+  robot.analogScand(3, IR_value1); 
   robot.digitalWrite(0,HIGH);
   robot.analogScand(3, IR_value2);
   robot.digitalWrite(0,LOW);
   for(int i=0;i<3;i++){
-    data[i] = (IR_value2[i] - IR_value1[i]);
+    uint8_t data = (IR_value2[i] - IR_value1[i]);
+    for(int j=1;j<10;j++){
+      if(data >= cal[i][j]){
+        res[i]=mapf(data,cal[i][j],cal[i][j-1],j*10,(j-1)*10);
+        break;
+      }
+      res[i]=mapf(data,cal[i][20],0,200,1000);
+    }
   }
 }
 
@@ -346,7 +383,7 @@ void resetSpeedProfile(void)
    kpX = 0.95; kdX = 10;
    kpW = 0.8; kdW = 17;//used in straight
    kpW0 = kpW; kdW0 = kdW;//used in straight
-   kpWir = 1.05; kdWir = 9;//used with IR errors
+   kpWir = 8.05; kdWir = 39;//used with IR errors
 
    accX = 45;//6m/s/s
    decX = 90;
