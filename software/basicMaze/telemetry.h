@@ -1,3 +1,9 @@
+/********************/
+/* TELEMETRY MODULE */
+/********************/
+/* Genera un servidor Telnet conectandose a una red WiFi y 
+ *  permite mandar mensajes a los clientes que esten 
+ *  escuchando en su Ip y puerto 23 dentro de la misma red WiFi */
 
 #ifndef _TELEMETRY_H
 #define _TELEMETRY_H

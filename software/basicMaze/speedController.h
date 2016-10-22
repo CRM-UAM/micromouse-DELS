@@ -1,4 +1,6 @@
-
+/********************
+ * SPEED CONTROLLER *
+ ********************/
 //call speedProfile(void) in systick handle to make it execute every one milli second
 //this controller sample code doesn't include
 
@@ -9,16 +11,6 @@
 //keep track the system time in millisecond
 /*
 //test the timing make sure everything finishes within 1ms and leave at least 30% extra time for other code to excute in main routing
-void systickHandler(void)
-{
-    Millis++;  //keep track of the system time in millisecond
-    if(bUseIRSensor)
-        readIRSensor();
-    if(bUseGyro)
-        readGyro();
-    if(bUseSpeedProfile)
-        speedProfile
-}
 */
 
 //ps. if you want to change speed, you simply change the targetSpeedX and targetSpeedW in main routing(int main) at any time.
@@ -78,23 +70,61 @@ extern ESP_Multi_Board robot;
 // extern float kpWir, kdWir;//used with IR errors
 
 
-
-//main function
+/*********************
+ * Punto de entrada  *
+ *********************/
+/**
+ * Esta funcion debe ser ejecutada a intervalos periodicos de tiempo (normalmente en ejecuciones)
+ * Periodo de ejecucion (probado) 25ms
+ */ 
 void speedProfile(void *a);
 
-//Principal functions
+
+/**
+ * Inicializa y resetea el controlador de velocidad
+ */
+void resetSpeedProfile(void);
+
+/***************************
+ *  funciones Principales  *
+ ***************************/
+/**
+ * Lee los encoders y Actualiza las variabes internas actualizando el desplazamiento registrado en el ultimo intervalo de ejecucion
+ */
 void getEncoderStatus();
+/**
+ * Calcula la curva de velocidad real, de acuerdo a la velocidad deseada (targetSpeedX y targetSpeedW) y las aceleraciones constantes (accX, decX, accW, decW)
+ */
 void updateCurrentSpeed();
+/**
+ * Lee los sensores IR y Gyro y ejecuta los correspondientes PIDs para calcular y fijar la velocidad de los motores 
+ */
 void calculateMotorPwm();
 
-//Aux functions
+
+/******************
+ * Aux functions *
+ *****************/
+/** Ejecua la lectura de los sensores IR
+ *    -utin8_T data[3]: variable para devolver los valores leidos, [0]->Izq, [1]->Frontal, [2]->Der
+ */
 void leerIRs(uint8_t *data);
+/**
+ * Ejecuta la lectura de los IR ajusta con la calibracion y retorna la distancia en mm
+ *    -utin8_T res[3]: variable para devolver las distancias leidas, [0]->Izq, [1]->Frontal, [2]->Der
+ */
+void leerDist(double *res);
+/**
+ * Funcion para calcular el error/posicion del robot respecto a las paredes
+ */
 void getErrIR();
+/**
+ * Funcion para calcular el error/posicion del robot respecto a las paredes
+ */
 void getErrIRChino();
+/**
+ * Funcion para calcular el error/posicion del robot respecto a las paredes
+ */
 void getErrIRNew();
-float needToDecelerate(long dist, int curSpd, int endSpd);//speed are in encoder counts/ms, dist is in encoder counts
-
-
-void resetSpeedProfile(void);
 
 #endif

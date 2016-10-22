@@ -69,6 +69,19 @@ extern int p_telemetria;
 os_timer_t timerSpeedController;
 
 
+float needToDecelerate(long dist, int curSpd, int endSpd)//speed are in encoder counts/ms, dist is in encoder counts
+{
+    if (curSpd<0) curSpd = -curSpd;
+    if (endSpd<0) endSpd = -endSpd;
+    if (dist<0) dist = 1;//-dist;
+    if (dist == 0) dist = 1;  //prevent divide by 0
+
+    return (abs(counts_to_speed((curSpd*curSpd - endSpd*endSpd)*100/(double)dist/4/2))); //dist_counts_to_mm(dist)/2);
+    //calculate deceleration rate needed with input distance, input current speed and input targetspeed to determind if the deceleration is needed
+    //use equation 2*a*S = Vt^2 - V0^2  ==>  a = (Vt^2-V0^2)/2/S
+    //because the speed is the sum of left and right wheels(which means it's doubled), that's why there is a "/4" in equation since the square of 2 is 4
+}
+
 /*
 sample code for straight movement
 */
@@ -111,10 +124,26 @@ void moveOneCell()
     //and LF/RFvalues2 are usually the threshold to determine if there is a front wall or not. You should probably move this 10mm closer to front wall when collecting
     //these thresholds just in case the readings are too weak.
 
-    Serial.print("Final Encoder Count");Serial.println((encoderCount-oldEncoderCount));
+//    Serial.print("Final Encoder Count");Serial.println((encoderCount-oldEncoderCount));
     oldEncoderCount = encoderCount; //update here for next movement to minimized the counts loss between cells.
 }
 
+
+/**
+ * Ejecuta un giro de 90º partiendo de la entrada de la celda y acabando en la entrada de la celda a der o izq.
+ *  *******      *  ^  *
+ *   >    *       >    *
+ *  *  v  *      ******* 
+ *  
+ *  Para realzar el giro se configura el controlador de velocidad para generar las curvas de velocidades lineales 
+ *  y angulares deseadas que se componen de 3 regiones:
+ *    t1 -> region de acceleracion de velocidad angular 
+ *    t2 -> region de velocidad constante angular 
+ *    t3 -> region de deceleracion angular
+ *   
+ *   Explicacion detallada: http://micromouseusa.com/?page_id=1342  (Lecture 7)
+ * 
+ */
 void turn90(int dir){
   float velW=7.6*dir;
   long t1 = (speed_to_counts(abs(velW))/accW)*25;
@@ -188,9 +217,11 @@ void setup() {
   // resetSpeedProfile();
 }
 
+
+
+
+/*
 #define TIME_BT_MOVE 10
-int num_loop=1;
-int dir=1;
 
 void loopChino() {
   moveOneCell();
@@ -201,32 +232,29 @@ void loopChino() {
   delay(TIME_BT_MOVE);
   moveOneCell();
   delay(TIME_BT_MOVE);
-  /*turn90(1);
+  turn90(1);
   delay(TIME_BT_MOVE);
   turn90(1);
-  delay(TIME_BT_MOVE);*/
+  delay(TIME_BT_MOVE);
 
-  /*if((num_loop++)%3==0){
-    targetSpeedX=0;
-    delay(10000);
-  }*/
-  //check_send_telnet_telemetry();
+  
+//check_send_telnet_telemetry();
   delay(2000);
 
 
 
-  /*for(int i=0;i<p_telemetria;i++){
-    for(int j=0;j<5;j++){
-      Serial.print(telemetria[i][j]);
-      Serial.print(" ");
-    }
-    Serial.println("");
-  }*/
-  //p_telemetria=0;
+//  for(int i=0;i<p_telemetria;i++){
+//    for(int j=0;j<5;j++){
+//      Serial.print(telemetria[i][j]);
+//      Serial.print(" ");
+//    }
+//    Serial.println("");
+//  }
+//  p_telemetria=0;
 
 
 }
-
+*/
 
 
 int leerPared(){
