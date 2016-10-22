@@ -172,6 +172,13 @@ void turn90(int dir){
   oldEncoderCount = encoderCount;
 }
 
+
+/**
+ * Ejecuta un giro de 180º y se coloca en una pocisión validad para inciar la marcha en la siguiente celda
+ * 
+ * TODO  (no se encuentra calibrada)
+ * 
+ */
 void turn180(int dir){
   float velW=16*dir;
   long t1 = (speed_to_counts(abs(velW))/accW)*25;
