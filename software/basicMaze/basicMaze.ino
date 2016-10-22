@@ -1,0 +1,269 @@
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+#include <Wire.h>
+#include <pgmspace.h>
+#include <ESP8266WiFi.h>
+
+#include <ESP_Multi_Board.h>
+#include "speedController.h"
+#include "telemetry.h"
+
+extern "C" {
+#include "user_interface.h"
+}
+
+
+#define ir_weight_straight  0.5
+
+
+/**
+ * Control variables
+ */
+ extern int targetSpeedX;
+ extern int targetSpeedW;
+
+/**
+ * Output variable. To be readed
+ */
+ extern long distanceLeft;
+ extern long encoderCount;
+ extern float curSpeedX;
+ extern float curSpeedW;
+ extern float accX;
+ extern float decX;
+ extern float accW;
+ extern float decW;
+
+/**
+ * Tune variables
+ */
+ extern float ir_weight;
+ extern float kpX, kdX;
+ extern float kpW, kdW; //used in straight
+ extern float kpW0, kdW0; //used in straight
+// extern float kpWir, kdWir;//used with IR errors
+
+//#define abs(x)  (x<0)?(-x):(x)
+
+//speed to count or count to speed are the macro or function to make the unit conversion
+// between encoder_counts/ms and mm/ms or any practical units you use.
+int moveSpeed = speed_to_counts(0);
+int turnSpeed = speed_to_counts(13);
+int returnSpeed = speed_to_counts(500*2);
+int stopSpeed = speed_to_counts(100*2);
+int maxSpeed = speed_to_counts(15);
+
+
+
+long oldEncoderCount=0;
+
+ESP_Multi_Board robot;
+
+extern float **telemetria;
+extern int p_telemetria;
+
+os_timer_t timerSpeedController;
+
+
+/*
+sample code for straight movement
+*/
+void moveOneCell()
+{
+    targetSpeedW = 0;
+    targetSpeedX = moveSpeed;
+    kpW = kpW0;
+    kdW = kdW0;
+    ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
+    do
+    {
+        /*you can call int needToDecelerate(int32_t dist, int16_t curSpd, int16_t endSpd)
+        here with current speed and distanceLeft to decide if you should start to decelerate or not.*/
+        /*sample*/
+        float accMin = needToDecelerate(ONE_CELL_DISTANCE-(encoderCount-oldEncoderCount), curSpeedX, moveSpeed);
+
+        if( accMin < decX)
+            targetSpeedX = maxSpeed;
+        else
+            targetSpeedX = moveSpeed;
+
+//        Serial.print(millis());Serial.print(" ");
+//        Serial.print(ONE_CELL_DISTANCE-(encoderCount-oldEncoderCount));Serial.print(" ");
+//        Serial.print(curSpeedX);Serial.print(" ");
+//        Serial.print(moveSpeed);Serial.print(" ");
+//        Serial.print(accMin);Serial.print(" ");
+//        Serial.print(decX);Serial.print(" ");
+//        Serial.print(targetSpeedX);Serial.println(" ");
+        delay(5);
+        //there is something else you can add here. Such as detecting falling edge of post to correct longitudinal position of mouse when running in a straight path
+        //Serial.print(targetSpeedX);Serial.print(" ");Serial.print((encoderCount-oldEncoderCount));Serial.print(" ");Serial.print(ONE_CELL_DISTANCE);Serial.println("");
+     }
+    while( ( (encoderCount-oldEncoderCount) < ONE_CELL_DISTANCE )//&& LFSensor < LFvalue2 && RFSensor < RFvalue2)//use encoder to finish 180mm movement if no front walls
+    //|| (LFSensor < LFvalues1 && LFSensor > LFvalue2)//if has front wall, make the mouse finish this 180mm with sensor threshold only
+    //|| (RFSensor < RFvalue1 && RFSensor > RFvalve2)
+    );
+    //LFvalues1 and RFvalues1 are the front wall sensor threshold when the center of mouse between the boundary of the cells.
+    //LFvalues2 and RFvalues2 are the front wall sensor threshold when the center of the mouse staying half cell farther than LFvalues1 and 2
+    //and LF/RFvalues2 are usually the threshold to determine if there is a front wall or not. You should probably move this 10mm closer to front wall when collecting
+    //these thresholds just in case the readings are too weak.
+
+    Serial.print("Final Encoder Count");Serial.println((encoderCount-oldEncoderCount));
+    oldEncoderCount = encoderCount; //update here for next movement to minimized the counts loss between cells.
+}
+
+void turn90(int dir){
+  float velW=7.6*dir;
+  long t1 = (speed_to_counts(abs(velW))/accW)*25;
+  long t2 = 510;
+  long t3 = (speed_to_counts(abs(velW))/decW)*25;
+  long tini = millis();
+  ir_weight = 0; //no usar los IR para alinearte con la pared cuando estas girando
+  targetSpeedX = turnSpeed;
+  targetSpeedW = speed_to_counts(velW);
+  kpW = kpW1;
+  kdW = kdW1;
+  while(millis()-tini < t1){delay(1);}
+  tini = millis();
+  kpW = kpW2;
+  kdW = kdW2;
+  while(millis()-tini < t2){delay(1);}
+  tini = millis();
+  kpW = kpW1;
+  kdW = kdW1;
+  targetSpeedW = 0;
+  targetSpeedX = targetSpeedX/4;
+  while(millis()-tini < t3){delay(1);}
+  targetSpeedX = turnSpeed;
+  kpW = kpW0;
+  kdW = kdW0;
+  oldEncoderCount = encoderCount;
+}
+
+void turn180(int dir){
+  float velW=16*dir;
+  long t1 = (speed_to_counts(abs(velW))/accW)*25;
+  long t2 =310;
+  long t3 = (speed_to_counts(abs(velW))/decW)*25;
+  long tini = millis();
+  ir_weight = 0; //no usar los IR para alinearte con la pared cuando estas girando
+  targetSpeedX = 0;
+  targetSpeedW = speed_to_counts(velW);
+  kpW = kpW1;
+  kdW = kdW1;
+  while(millis()-tini < t1){delay(1);}
+  tini = millis();
+  kpW = kpW2;
+  kdW = kdW2;
+  while(millis()-tini < t2){delay(1);}
+  tini = millis();
+  kpW = kpW1;
+  kdW = kdW1;
+  targetSpeedW = 0;
+  targetSpeedX = 0;
+  while(millis()-tini < t3){delay(1);}
+  targetSpeedX = 0;
+  kpW = kpW0;
+  kdW = kdW0;
+  oldEncoderCount = encoderCount;
+}
+
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+  delay(500);
+
+  Serial.begin(115200);
+  //init_telnet();
+
+  robot.begin();
+
+   os_timer_setfn(&timerSpeedController, speedProfile, NULL);
+   os_timer_arm(&timerSpeedController, 25, true);
+  // resetSpeedProfile();
+}
+
+#define TIME_BT_MOVE 10
+int num_loop=1;
+int dir=1;
+
+void loopChino() {
+  moveOneCell();
+  delay(TIME_BT_MOVE);
+  moveOneCell();
+  delay(TIME_BT_MOVE);
+  moveOneCell();
+  delay(TIME_BT_MOVE);
+  moveOneCell();
+  delay(TIME_BT_MOVE);
+  /*turn90(1);
+  delay(TIME_BT_MOVE);
+  turn90(1);
+  delay(TIME_BT_MOVE);*/
+
+  /*if((num_loop++)%3==0){
+    targetSpeedX=0;
+    delay(10000);
+  }*/
+  //check_send_telnet_telemetry();
+  delay(2000);
+
+
+
+  /*for(int i=0;i<p_telemetria;i++){
+    for(int j=0;j<5;j++){
+      Serial.print(telemetria[i][j]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+  }*/
+  //p_telemetria=0;
+
+
+}
+
+
+
+int leerPared(){
+    uint8_t IR_value[3]={0};
+    leerIRs(IR_value);
+
+    if(IR_value[0]<70){
+      return 1;
+    }else if(IR_value[1]<35){
+      return 0;
+    }else if(IR_value[2]<70){
+      return -1;
+    }
+    return 2;
+}
+
+void loop(){
+   targetSpeedW = 0;
+   targetSpeedX = maxSpeed;
+   kpW = kpW0;
+   kdW = kdW0;
+   ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
+  int pared=leerPared();
+  if( pared!=0){
+    targetSpeedX = speed_to_counts(0);
+    delay(1000);
+    if(pared==1)
+      turn90(1);
+    else if(pared==-1){
+      turn90(-1);
+     }else if(pared==2){
+      targetSpeedX = 0;
+      delay(5000);
+     }
+    targetSpeedX = 0;
+    delay(1000);
+  }
+}
+
+
