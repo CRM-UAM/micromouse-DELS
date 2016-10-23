@@ -151,6 +151,8 @@ void turn90(int dir){
   long t3 = (speed_to_counts(abs(velW))/decW)*25;
   long tini = millis();
   ir_weight = 0; //no usar los IR para alinearte con la pared cuando estas girando
+
+  
   targetSpeedX = turnSpeed;
   targetSpeedW = speed_to_counts(velW);
   kpW = kpW1;
@@ -166,7 +168,7 @@ void turn90(int dir){
   targetSpeedW = 0;
   targetSpeedX = targetSpeedX/5;
   while(millis()-tini < t3){delay(1);}
-  targetSpeedX = turnSpeed/5;
+  targetSpeedX = 0;
   kpW = kpW0;
   kdW = kdW0;
   oldEncoderCount = encoderCount;
@@ -310,7 +312,7 @@ int leerPared(){
 inline bool leerHuecoFrontal(){
   double IR_dist[3]={0};
   leerDist(IR_dist);
-  return (IR_dist[1] > 105);
+  return (IR_dist[1] > 125); //105
 }
 inline bool leerPilarLateral(int numSen){
   double IR_dist[3]={0};
