@@ -146,6 +146,10 @@ void updateCurrentSpeed(void)
     }
     
 }
+void  resetGyro(){
+  posErrorW = 0;
+  oldPosErrorW = 0;
+}
 
 void calculateMotorPwm(void) // encoder PD controller
 {
@@ -284,12 +288,12 @@ inline void getErrIRChino(){
     //int DLMinValue=60;
     //int DRMinValue=76;
 
-    float DLMiddleValue=23;
-    float DRMiddleValue=23;
+    float DLMiddleValue=28;
+    float DRMiddleValue=25;
  //   float DLMinValue2=31;
  //   float DRMinValue2=28;
-    float DLMinValue=90;
-    float DRMinValue=90;
+    float DLMinValue=50;
+    float DRMinValue=50;
     
     double IR_dist[3]={0};
     leerDist(IR_dist);
@@ -303,15 +307,19 @@ inline void getErrIRChino(){
       //if(IR_dist[0] < DLMinValue2 && IR_dist[2] < DRMinValue2){
       //  posErrorWir = IR_dist[0] - IR_dist[2];
       //}else{
+      
         if(IR_dist[0] < IR_dist[2]){
           posErrorWir = IR_dist[0] - DLMiddleValue ;
         }else{
           posErrorWir =  DRMiddleValue - IR_dist[2];
         }
+        //TODO Evitar incontinuidades al salir y entrar de las paredes
+       
  //     }
     }else{
       posErrorWir=0;
       oldPosErrorWir=0;
+      
     }
     
 }
@@ -377,10 +385,12 @@ void resetSpeedProfile(void)
    kpX = 0.95; kdX = 10;
    kpW = 0.8; kdW = 17;//used in straight
    kpW0 = kpW; kdW0 = kdW;//used in straight
-   kpWir = 13.4; kdWir = 100;//used with IR errors
+   kpWir = 14.4; kdWir = 25;//used with IR errors
 
    accX = 45;//6m/s/s
    decX = 90;
+   accX = 45;//6m/s/s
+   decX = 110;
    accW = 1; //cm/s^2
    decW = 1;
 

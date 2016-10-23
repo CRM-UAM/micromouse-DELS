@@ -85,6 +85,8 @@ void speedProfile(void *a);
  */
 void resetSpeedProfile(void);
 
+void  resetGyro();
+
 /***************************
  *  funciones Principales  *
  ***************************/

@@ -164,12 +164,27 @@ void turn90(int dir){
   kpW = kpW1;
   kdW = kdW1;
   targetSpeedW = 0;
-  targetSpeedX = targetSpeedX/4;
+  targetSpeedX = targetSpeedX/5;
   while(millis()-tini < t3){delay(1);}
-  targetSpeedX = turnSpeed;
+  targetSpeedX = turnSpeed/5;
   kpW = kpW0;
   kdW = kdW0;
   oldEncoderCount = encoderCount;
+  resetGyro();
+}
+
+void avanzarCorreccionTrasGiro(int dist){
+   resetGyro();
+   targetSpeedW = 0;
+   targetSpeedX = speed_to_counts(15);
+   kpW = kpW0;
+   kdW = kdW0;
+   ir_weight = 0.0; //solo ir recto con el gyro (casi)
+   //while(encoderCount - oldEncoderCount > dist)
+    delay(100);
+   oldEncoderCount = encoderCount;
+   targetSpeedX = 0;
+   resetGyro();
 }
 
 
@@ -205,6 +220,7 @@ void turn180(int dir){
   kpW = kpW0;
   kdW = kdW0;
   oldEncoderCount = encoderCount;
+  resetGyro();
 }
 
 
@@ -282,14 +298,24 @@ int leerPared(){
     double IR_dist[3]={0};
     leerDist(IR_dist);
 
-    if(IR_dist[0]>55){
+    if(IR_dist[0]>53){
       return 1;
-    }else if(IR_dist[1]>115){
-      return 0;
-    }else if(IR_dist[2]>55){
+    }else if(IR_dist[1]<55){
+      return 2;
+    }else if(IR_dist[2]>53){
       return -1;
     }
-    return 2;
+    return 0;
+}
+inline bool leerHuecoFrontal(){
+  double IR_dist[3]={0};
+  leerDist(IR_dist);
+  return (IR_dist[1] > 105);
+}
+inline bool leerPilarLateral(int numSen){
+  double IR_dist[3]={0};
+  leerDist(IR_dist);
+  return (IR_dist[numSen] <60);
 }
 
 void loop(){
@@ -302,18 +328,33 @@ void loop(){
    
   int pared=leerPared();
   if( pared!=0){
+    resetGyro();
     targetSpeedX = speed_to_counts(0);
-    delay(1000);
-    if(pared==1)
+    delay(300);
+    if(pared==1){//giro a la izq
       turn90(1);
-    else if(pared==-1){
-      turn90(-1);
-     }else if(pared==2){
+      avanzarCorreccionTrasGiro(10);
+      delay(1000);
+    }else if(pared==-1){ //Compruebo si hay hueco al frente o no
+      if( !leerHuecoFrontal()){ //si no hay hueco frontal giro a la der
+        turn90(-1);
+        avanzarCorreccionTrasGiro(50);
+      }else{
+        //sigo de frente hasta encontrar el siguiente pilar en la pared derecha
+           targetSpeedW = 0;
+           targetSpeedX = speed_to_counts(15);
+           kpW = kpW0;
+           kdW = kdW0;
+           ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
+           while( !leerPilarLateral(2) )delay(50); //Mientras que no encuentre la pared de nuevo (un pilar) en la derecha -> avanzo
+      }
+     }else if(pared==2){ //punto ciego tengo girar 180º
       targetSpeedX = 0;
-      delay(5000);
+      delay(500);
+      turn180(1);
      }
     targetSpeedX = 0;
-    delay(1000);
+    delay(300);
   }
 }
 
