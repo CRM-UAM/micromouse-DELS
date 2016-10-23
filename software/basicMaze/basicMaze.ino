@@ -17,7 +17,7 @@ extern "C" {
 }
 
 
-#define ir_weight_straight  1
+#define ir_weight_straight  0.5
 
 
 /**
@@ -264,7 +264,7 @@ void loopChino() {
 */
 
 
-int leerPared(){
+int leerPared_old(){
     uint8_t IR_value[3]={0};
     leerIRs(IR_value);
 
@@ -278,16 +278,28 @@ int leerPared(){
     return 2;
 }
 
+int leerPared(){
+    double IR_dist[3]={0};
+    leerDist(IR_dist);
+
+    if(IR_dist[0]>55){
+      return 1;
+    }else if(IR_dist[1]>115){
+      return 0;
+    }else if(IR_dist[2]>55){
+      return -1;
+    }
+    return 2;
+}
+
 void loop(){
   
    targetSpeedW = 0;
-   targetSpeedX = 0;//maxSpeed;
+   targetSpeedX = speed_to_counts(15);
    kpW = kpW0;
    kdW = kdW0;
    ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
-   while(1){
-    delay(1000);
-   }
+   
   int pared=leerPared();
   if( pared!=0){
     targetSpeedX = speed_to_counts(0);
@@ -304,5 +316,4 @@ void loop(){
     delay(1000);
   }
 }
-
 

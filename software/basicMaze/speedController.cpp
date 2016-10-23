@@ -237,7 +237,7 @@ void leerDist(double *res){
   uint8_t IR_value2[3]={0};
   uint8_t cal[3][21]={{236,226,184,120,83,64,49,39,32,27,23  ,20,17,15,14,13,12,11,10,8,7},
                       {245,237,231,198,121,85,62,48,38,31,25, 21,18,15,13,12,11,10,9,8,7},
-                      {236,233,218,177,129,99,77,61,50,42,35,30,26,23,20,18, 15, 14, 13,12,11}};
+                      {238,235,223,172,121,91,71,56,46,37,31,27,22,19,16,14, 13, 12, 10,9,8}};
   
   robot.analogScand(3, IR_value1); 
   robot.digitalWrite(0,HIGH);
@@ -245,7 +245,7 @@ void leerDist(double *res){
   robot.digitalWrite(0,LOW);
   for(int i=0;i<3;i++){
     uint8_t data = (IR_value2[i] - IR_value1[i]);
-    for(int j=1;j<10;j++){
+    for(int j=1;j<21;j++){
       if(data >= cal[i][j]){
         res[i]=mapf(data,cal[i][j],cal[i][j-1],j*10,(j-1)*10);
         break;
@@ -284,25 +284,34 @@ inline void getErrIRChino(){
     //int DLMinValue=60;
     //int DRMinValue=76;
 
-    int DLMiddleValue=215;
-    int DRMiddleValue=225;
-    int DLMinValue=170;
-    int DRMinValue=185;
+    float DLMiddleValue=23;
+    float DRMiddleValue=23;
+ //   float DLMinValue2=31;
+ //   float DRMinValue2=28;
+    float DLMinValue=90;
+    float DRMinValue=90;
     
-    uint8_t IR_value[3]={0};
-    leerIRs(IR_value);
+    double IR_dist[3]={0};
+    leerDist(IR_dist);
     
     //telemetria[p_telemetria][6]=IR_value[0];
     //telemetria[p_telemetria][7]=IR_value[2];
-
-    if(IR_value[0] > DLMinValue || IR_value[2] > DRMinValue){
-      if(IR_value[0] > IR_value[2]){
-        posErrorWir = DLMiddleValue - IR_value[0];
-      }else{
-        posErrorWir = IR_value[2] - DRMiddleValue;
-      }
+    /*if(IR_dist[0] < DLMiddleValue && IR_dist[2] < DRMiddleValue){
+        posErrorWir = IR_dist[0] - IR_dist[2];
+      }*/
+    if(IR_dist[0] < DLMinValue || IR_dist[2] < DRMinValue){
+      //if(IR_dist[0] < DLMinValue2 && IR_dist[2] < DRMinValue2){
+      //  posErrorWir = IR_dist[0] - IR_dist[2];
+      //}else{
+        if(IR_dist[0] < IR_dist[2]){
+          posErrorWir = IR_dist[0] - DLMiddleValue ;
+        }else{
+          posErrorWir =  DRMiddleValue - IR_dist[2];
+        }
+ //     }
     }else{
       posErrorWir=0;
+      oldPosErrorWir=0;
     }
     
 }
@@ -368,7 +377,7 @@ void resetSpeedProfile(void)
    kpX = 0.95; kdX = 10;
    kpW = 0.8; kdW = 17;//used in straight
    kpW0 = kpW; kdW0 = kdW;//used in straight
-   kpWir = 8.05; kdWir = 39;//used with IR errors
+   kpWir = 13.4; kdWir = 100;//used with IR errors
 
    accX = 45;//6m/s/s
    decX = 90;
