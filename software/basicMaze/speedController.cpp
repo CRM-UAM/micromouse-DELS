@@ -88,8 +88,8 @@ void speedProfile(void *a){
 
 void getEncoderStatus()
 {
-    long leftEncoder = robot.getEncLeftCount(); //leftEncoder = TIM2->CNT;//read current encoder ticks from register of 32 bit general purpose timer 2
-    long rightEncoder = robot.getEncRightCount(); //rightEncoder = TIM5->CNT;//read current encoder ticks from register of 32 bit general purpose timer 5
+    long leftEncoder = -robot.getEncRightCount();//long leftEncoder = robot.getEncLeftCount(); //leftEncoder = TIM2->CNT;//read current encoder ticks from register of 32 bit general purpose timer 2
+    long rightEncoder = -robot.getEncLeftCount();//long rightEncoder = robot.getEncRightCount(); //rightEncoder = TIM5->CNT;//read current encoder ticks from register of 32 bit general purpose timer 5
 
     leftEncoderChange = leftEncoder - leftEncoderOld;
     rightEncoderChange = rightEncoder - rightEncoderOld;
@@ -159,7 +159,7 @@ void calculateMotorPwm(void) // encoder PD controller
     /* simple PD loop to generate base speed for both motors */
     encoderFeedbackX = rightEncoderChange + leftEncoderChange;
     encoderFeedbackW = rightEncoderChange - leftEncoderChange;
-    float gyro = robot.read_IMU_GyZ()*1.0;
+    float gyro = -robot.read_IMU_GyZ()*1.0;
     float gyroFeedback = gyro / gyroFeedbackRatio; //gyroFeedbackRatio mentioned in curve turn lecture
     //gyroIntegrate += gyroFeedback;
     //sensorFeedback = sensorError/a_scale;//have sensor error properly scale to fit the system
@@ -202,8 +202,8 @@ void calculateMotorPwm(void) // encoder PD controller
 
     Serial.print("-");
     Serial.println((rightBaseSpeed-leftBaseSpeed)/2);
-    robot.setMotorLeftSpeed(leftBaseSpeed);
-    robot.setMotorRightSpeed(rightBaseSpeed);
+    robot.setMotorLeftSpeed( -rightBaseSpeed);//    robot.setMotorLeftSpeed(leftBaseSpeed);
+    robot.setMotorRightSpeed( -leftBaseSpeed);//    robot.setMotorRightSpeed(rightBaseSpeed);
     /*if(p_telemetria<SIZE_TELEMETRIA){
       telemetria[p_telemetria][0]=micros();
       telemetria[p_telemetria][1]=curSpeedX;
@@ -239,9 +239,10 @@ void leerDist(double *res){
   
   uint8_t IR_value1[3]={0};
   uint8_t IR_value2[3]={0};
-  uint8_t cal[3][21]={{236,226,184,120,83,64,49,39,32,27,23  ,20,17,15,14,13,12,11,10,8,7},
-                      {245,237,231,198,121,85,62,48,38,31,25, 21,18,15,13,12,11,10,9,8,7},
-                      {238,235,223,172,121,91,71,56,46,37,31,27,22,19,16,14, 13, 12, 10,9,8}};
+  //Calibrado con el robot dado la vuelta desde 0cm hasta 20cm de 1cm en 1cm
+  uint8_t cal[3][21]={{237,230,197,131,92,66,50,42,35,29,24,21,18,16,14,12,11,10,9,9,8},
+                      {237,228,177,113,77,56,42,33,26,22,18, 16,14,12,10,9,8,7,7,6,6},
+                      {237,234,224,188,134,99,76,60,49,41,35,30,26,23,20,18,16,15,14,13,12}};
   
   robot.analogScand(3, IR_value1); 
   robot.digitalWrite(0,HIGH);
@@ -297,21 +298,24 @@ inline void getErrIRChino(){
     
     double IR_dist[3]={0};
     leerDist(IR_dist);
+    double DIST_IZQ = IR_dist[2];
+    double DIST_DER = IR_dist[0];
+    double DIST_FRON = IR_dist[1];
     
     //telemetria[p_telemetria][6]=IR_value[0];
     //telemetria[p_telemetria][7]=IR_value[2];
-    /*if(IR_dist[0] < DLMiddleValue && IR_dist[2] < DRMiddleValue){
-        posErrorWir = IR_dist[0] - IR_dist[2];
+    /*if(DIST_IZQ < DLMiddleValue && DIST_DER < DRMiddleValue){
+        posErrorWir = IR_dist[0] - DIST_DER;
       }*/
-    if(IR_dist[0] < DLMinValue || IR_dist[2] < DRMinValue){
-      //if(IR_dist[0] < DLMinValue2 && IR_dist[2] < DRMinValue2){
-      //  posErrorWir = IR_dist[0] - IR_dist[2];
+    if(DIST_IZQ < DLMinValue || DIST_DER < DRMinValue){
+      //if(DIST_IZQ < DLMinValue2 && DIST_DER < DRMinValue2){
+      //  posErrorWir = DIST_IZQ - DIST_DER;
       //}else{
       
-        if(IR_dist[0] < IR_dist[2]){
-          posErrorWir = IR_dist[0] - DLMiddleValue ;
+        if(DIST_IZQ < DIST_DER){
+          posErrorWir = DIST_IZQ - DLMiddleValue ;
         }else{
-          posErrorWir =  DRMiddleValue - IR_dist[2];
+          posErrorWir =  DRMiddleValue - DIST_DER;
         }
         //TODO Evitar incontinuidades al salir y entrar de las paredes
        
@@ -391,8 +395,8 @@ void resetSpeedProfile(void)
    decX = 90;
    accX = 45;//6m/s/s
    decX = 110;
-   accW = 1; //cm/s^2
-   decW = 1;
+   accW = 2; //cm/s^2
+   decW = 2;
 
 
 //reset variables

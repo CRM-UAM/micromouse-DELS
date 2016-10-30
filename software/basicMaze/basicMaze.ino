@@ -52,10 +52,10 @@ extern "C" {
 //speed to count or count to speed are the macro or function to make the unit conversion
 // between encoder_counts/ms and mm/ms or any practical units you use.
 int moveSpeed = speed_to_counts(0);
-int turnSpeed = speed_to_counts(13);
+int turnSpeed = speed_to_counts(18);
 int returnSpeed = speed_to_counts(500*2);
 int stopSpeed = speed_to_counts(100*2);
-int maxSpeed = speed_to_counts(15);
+int maxSpeed = speed_to_counts(18);
 
 
 
@@ -145,9 +145,9 @@ void moveOneCell()
  * 
  */
 void turn90(int dir){
-  float velW=7.6*dir;
+  float velW=13*dir;
   long t1 = (speed_to_counts(abs(velW))/accW)*25;
-  long t2 = 510;
+  long t2 = 275;
   long t3 = (speed_to_counts(abs(velW))/decW)*25;
   long tini = millis();
   ir_weight = 0; //no usar los IR para alinearte con la pared cuando estas girando
@@ -166,9 +166,9 @@ void turn90(int dir){
   kpW = kpW1;
   kdW = kdW1;
   targetSpeedW = 0;
-  targetSpeedX = targetSpeedX/5;
+  targetSpeedX = targetSpeedX/2;
   while(millis()-tini < t3){delay(1);}
-  targetSpeedX = 0;
+ // targetSpeedX = 0;
   kpW = kpW0;
   kdW = kdW0;
   oldEncoderCount = encoderCount;
@@ -199,7 +199,7 @@ void avanzarCorreccionTrasGiro(int dist){
 void turn180(int dir){
   float velW=16*dir;
   long t1 = (speed_to_counts(abs(velW))/accW)*25;
-  long t2 =310;
+  long t2 =575;
   long t3 = (speed_to_counts(abs(velW))/decW)*25;
   long tini = millis();
   ir_weight = 0; //no usar los IR para alinearte con la pared cuando estas girando
@@ -230,7 +230,7 @@ void turn180(int dir){
 
 void setup() {
   // put your setup code here, to run once:
-  delay(500);
+  delay(2000);
 
   Serial.begin(115200);
   //init_telnet();
@@ -282,7 +282,7 @@ void loopChino() {
 */
 
 
-int leerPared_old(){
+/*int leerPared_old(){
     uint8_t IR_value[3]={0};
     leerIRs(IR_value);
 
@@ -294,17 +294,17 @@ int leerPared_old(){
       return -1;
     }
     return 2;
-}
+}*/
 
 int leerPared(){
     double IR_dist[3]={0};
     leerDist(IR_dist);
 
-    if(IR_dist[0]>53){
+    if(IR_dist[2]>80){
       return 1;
     }else if(IR_dist[1]<55){
       return 2;
-    }else if(IR_dist[2]>53){
+    }else if(IR_dist[0]>80){
       return -1;
     }
     return 0;
@@ -331,16 +331,16 @@ void loop(){
   int pared=leerPared();
   if( pared!=0){
     resetGyro();
-    targetSpeedX = speed_to_counts(0);
-    delay(300);
+ //   targetSpeedX = speed_to_counts(0);
+ //   delay(10);
     if(pared==1){//giro a la izq
       turn90(1);
-      avanzarCorreccionTrasGiro(10);
-      delay(1000);
+      //avanzarCorreccionTrasGiro(10);
+      //delay(1000);
     }else if(pared==-1){ //Compruebo si hay hueco al frente o no
       if( !leerHuecoFrontal()){ //si no hay hueco frontal giro a la der
         turn90(-1);
-        avanzarCorreccionTrasGiro(50);
+        //avanzarCorreccionTrasGiro(10);
       }else{
         //sigo de frente hasta encontrar el siguiente pilar en la pared derecha
            targetSpeedW = 0;
@@ -348,15 +348,15 @@ void loop(){
            kpW = kpW0;
            kdW = kdW0;
            ir_weight = ir_weight_straight; // usar los IR para alinearte con la pared
-           while( !leerPilarLateral(2) )delay(50); //Mientras que no encuentre la pared de nuevo (un pilar) en la derecha -> avanzo
+           while( !leerPilarLateral(0) )delay(50); //Mientras que no encuentre la pared de nuevo (un pilar) en la derecha -> avanzo
       }
      }else if(pared==2){ //punto ciego tengo girar 180º
       targetSpeedX = 0;
-      delay(500);
+      delay(50);
       turn180(1);
      }
-    targetSpeedX = 0;
-    delay(300);
+    //targetSpeedX = 0;
+    //delay(300);
   }
 }
 
