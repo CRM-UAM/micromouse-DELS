@@ -52,10 +52,10 @@ extern "C" {
 //speed to count or count to speed are the macro or function to make the unit conversion
 // between encoder_counts/ms and mm/ms or any practical units you use.
 int moveSpeed = speed_to_counts(0);
-int turnSpeed = speed_to_counts(18);
+int turnSpeed = speed_to_counts(15);
 int returnSpeed = speed_to_counts(500*2);
 int stopSpeed = speed_to_counts(100*2);
-int maxSpeed = speed_to_counts(18);
+int maxSpeed = speed_to_counts(15);
 
 
 
@@ -145,7 +145,7 @@ void moveOneCell()
  * 
  */
 void turn90(int dir){
-  float velW=13*dir;
+  float velW=12.3*dir;
   long t1 = (speed_to_counts(abs(velW))/accW)*25;
   long t2 = 275;
   long t3 = (speed_to_counts(abs(velW))/decW)*25;
@@ -166,7 +166,7 @@ void turn90(int dir){
   kpW = kpW1;
   kdW = kdW1;
   targetSpeedW = 0;
-  targetSpeedX = targetSpeedX/2;
+  targetSpeedX = targetSpeedX/1.2;
   while(millis()-tini < t3){delay(1);}
  // targetSpeedX = 0;
   kpW = kpW0;
@@ -300,11 +300,11 @@ int leerPared(){
     double IR_dist[3]={0};
     leerDist(IR_dist);
 
-    if(IR_dist[2]>80){
+    if(IR_dist[2]>90){
       return 1;
     }else if(IR_dist[1]<55){
       return 2;
-    }else if(IR_dist[0]>80){
+    }else if(IR_dist[0]>90){
       return -1;
     }
     return 0;
