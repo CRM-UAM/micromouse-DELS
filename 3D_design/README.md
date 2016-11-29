@@ -12,4 +12,4 @@ Designed with <http://www.openscad.org/>
 
 # What could have been
 ![](sketch_GuillermoSarasa.jpg)
-Boceto de Guillermo Sarasa para el robot que finalmente fue bautizado como _DELS (¿Dónde Está La Salida?)_ por Pablo Molins.
+Boceto de Guillermo Sarasa (@Arphunix) para el robot que finalmente fue bautizado como _DELS (¿Dónde Está La Salida?)_ por Pablo Molins (@molins).
